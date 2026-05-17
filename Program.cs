@@ -1,57 +1,99 @@
 ﻿using System;
+using System.Collections.Generic;
 
-public class Produto
+public class CalculadoraInfixada
 {
-    public int CodigoProduto;
-    public string NomeProduto;
-    public double Preco;
-    public int QuantidadeEstoque;
-
-    public void ReceberDados()
+    public static double AvaliarExpressao(string expressao)
     {
-        Console.Write("Código do produto: ");
-        CodigoProduto = int.Parse(Console.ReadLine());
-        Console.Write("Nome do produto: ");
-        NomeProduto = Console.ReadLine();
-        Console.Write("Preço: ");
-        Preco = double.Parse(Console.ReadLine());
-        Console.Write("Quantidade inicial: ");
-        QuantidadeEstoque = int.Parse(Console.ReadLine());
+        
+        Stack<double> valores = new Stack<double>();
+        Stack<char> operadores = new Stack<char>();
+
+       
+        string[] tokens = expressao.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (string token in tokens)
+        {
+           
+            if (double.TryParse(token, out double numero))
+            {
+                valores.Push(numero);
+            }
+          
+            else if (token.Length == 1)
+            {
+                char op = token[0];
+                if (op == '+' || op == '-' || op == '*' || op == '/')
+                {
+                   
+                    while (operadores.Count > 0 && Precedencia(operadores.Peek()) >= Precedencia(op))
+                    {
+                        double val2 = valores.Pop();
+                        double val1 = valores.Pop();
+                        char opTopo = operadores.Pop();
+                        
+                        valores.Push(AplicarOperacao(opTopo, val2, val1));
+                    }
+                    
+                   
+                    operadores.Push(op);
+                }
+            }
+        }
+
+       
+        while (operadores.Count > 0)
+        {
+            double val2 = valores.Pop();
+            double val1 = valores.Pop();
+            char opTopo = operadores.Pop();
+            
+            valores.Push(AplicarOperacao(opTopo, val2, val1));
+        }
+
+       
+        return valores.Pop();
     }
 
-    public void AdicionarEstoque()
+   
+    private static int Precedencia(char op)
     {
-        Console.Write("Quantidade a adicionar: ");
-        int qtd = int.Parse(Console.ReadLine());
-        QuantidadeEstoque += qtd;
+        if (op == '+' || op == '-') 
+            return 1;
+        
+        if (op == '*' || op == '/') 
+            return 2;
+        
+        return 0;
     }
 
-    public void RemoverEstoque()
+    
+    private static double AplicarOperacao(char op, double b, double a)
     {
-        Console.Write("Quantidade a remover: ");
-        int qtd = int.Parse(Console.ReadLine());
-        if (qtd <= QuantidadeEstoque)
-            QuantidadeEstoque -= qtd;
-        else
-            Console.WriteLine("Estoque insuficiente.");
+        switch (op)
+        {
+            case '+': return a + b;
+            case '-': return a - b;
+            case '*': return a * b;
+            case '/': 
+                if (b == 0) throw new DivideByZeroException("Não é possível dividir por zero.");
+                return a / b;
+            default: return 0;
+        }
     }
 
-    public void MostrarProduto()
-    {
-        Console.WriteLine($"\n[Produto] Código: {CodigoProduto} | Nome: {NomeProduto} | Preço: R${Preco:F2} | Estoque: {QuantidadeEstoque}");
-    }
-}
-
-public class ProgramEx3
-{
     public static void Main()
     {
-        Produto p = new Produto();
-        p.ReceberDados();
-        p.MostrarProduto();
-        p.AdicionarEstoque();
-        p.MostrarProduto();
-        p.RemoverEstoque();
-        p.MostrarProduto();
+       
+        string expressao1 = "3 + 4 * 2";
+        Console.WriteLine($"Expressão: {expressao1}");
+        Console.WriteLine($"Resultado: {AvaliarExpressao(expressao1)}"); 
+
+        Console.WriteLine("-------------------------");
+
+      
+        string expressao2 = "10 - 2 * 3 + 4";
+        Console.WriteLine($"Expressão: {expressao2}");
+        Console.WriteLine($"Resultado: {AvaliarExpressao(expressao2)}"); 
     }
 }
